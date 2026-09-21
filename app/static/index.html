@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>科研配方量纲校验台</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">🧪</span>
+    <div>
+      <h1>科研配方量纲校验台</h1>
+      <p class="subtitle">解析带单位表达式 · 递归推导量纲 · 自动单位换算 · 错误片段定位</p>
+    </div>
+  </div>
+  <div class="top-actions">
+    <button id="btn-units" class="btn btn-ghost" type="button">单位/函数手册</button>
+    <a class="btn btn-ghost" href="/docs" target="_blank">API 文档</a>
+  </div>
+</header>
+
+<main class="layout">
+  <!-- 左：录入 -->
+  <section class="panel input-panel">
+    <div class="panel-head">
+      <h2>① 表达式</h2>
+      <div class="head-actions">
+        <button id="btn-validate" class="btn btn-primary" type="button">校验量纲</button>
+      </div>
+    </div>
+
+    <div class="expr-area">
+      <div class="expr-overlay" id="expr-overlay" aria-hidden="true"></div>
+      <textarea id="expr" rows="3" spellcheck="false"
+        placeholder="例如：m/(rho*V)、sqrt(2*E_k/m)、60 km/h * 2 h、P*V/(n*R*T)"></textarea>
+    </div>
+    <div class="hint">
+      支持括号、<code>^</code>/<code>**</code> 幂、<code>sqrt ln log10 exp sin cos abs min max round</code> 等函数；
+      数字可直接带单位，如 <code>25 °C</code>、<code>9.8 m/s^2</code>。
+    </div>
+
+    <div class="panel-head sub">
+      <h2>② 变量值</h2>
+      <div class="head-actions">
+        <button id="btn-extract" class="btn btn-small" type="button">从表达式提取</button>
+        <button id="btn-add-var" class="btn btn-small" type="button">+ 添加变量</button>
+      </div>
+    </div>
+    <div class="var-table-wrap">
+      <table class="var-table" id="var-table">
+        <thead>
+          <tr><th style="width:22%">变量名</th><th style="width:30%">数值</th><th>单位</th><th style="width:48px"></th></tr>
+        </thead>
+        <tbody id="var-body"></tbody>
+      </table>
+    </div>
+
+    <div class="panel-head sub">
+      <h2>③ 案例</h2>
+    </div>
+    <div class="case-row">
+      <input id="case-name" type="text" placeholder="案例名称（保存时填写）">
+      <input id="case-desc" type="text" placeholder="备注（可选）" class="grow">
+    </div>
+    <div class="case-row">
+      <button id="btn-save" class="btn" type="button">💾 保存</button>
+      <button id="btn-update" class="btn btn-ghost" type="button" disabled>↻ 更新当前</button>
+      <button id="btn-export-result" class="btn btn-ghost" type="button">⬇ 导出结果 JSON</button>
+      <button id="btn-new" class="btn btn-ghost" type="button">新建</button>
+      <span id="current-case" class="current-case"></span>
+    </div>
+  </section>
+
+  <!-- 右：结果 -->
+  <section class="panel result-panel">
+    <div class="panel-head">
+      <h2>校验结果</h2>
+      <span id="status-badge" class="badge badge-idle">待校验</span>
+    </div>
+
+    <div id="errors" class="errors hidden"></div>
+
+    <div id="result-card" class="result-card hidden">
+      <div class="result-main">
+        <div class="result-value">
+          <span id="r-value">–</span>
+          <span id="r-unit" class="result-unit"></span>
+        </div>
+        <div class="result-dim">
+          量纲：<b id="r-dim-name"></b>
+          <code id="r-dim-symbol" class="dim-code"></code>
+        </div>
+        <div class="result-si" id="r-si"></div>
+      </div>
+
+      <h3>单位换算</h3>
+      <div id="conversions" class="conversions"></div>
+
+      <h3>递归推导轨迹</h3>
+      <div class="steps-wrap">
+        <table class="steps-table">
+          <thead><tr><th>片段</th><th>类型</th><th>数值</th><th>单位</th><th>量纲</th></tr></thead>
+          <tbody id="steps-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="idle-hint" class="idle-hint">
+      <p>输入表达式与变量后点击「校验量纲」。</p>
+      <p class="muted">量纲一致时给出换算表；不一致或引用未定义变量时，错误会高亮在表达式对应片段上。</p>
+    </div>
+  </section>
+</main>
+
+<!-- 案例库抽屉 -->
+<aside id="drawer-mask" class="drawer-mask hidden"></aside>
+<aside id="case-drawer" class="drawer hidden">
+  <div class="drawer-head">
+    <h2>校验案例库</h2>
+    <button id="btn-close-drawer" class="btn btn-ghost" type="button">关闭</button>
+  </div>
+  <div class="drawer-tools">
+    <input id="case-search" type="search" placeholder="搜索名称 / 表达式…">
+    <button id="btn-refresh-cases" class="btn btn-small" type="button">刷新</button>
+  </div>
+  <div id="case-list" class="case-list"></div>
+</aside>
+
+<!-- 单位手册抽屉 -->
+<aside id="units-drawer" class="drawer wide hidden">
+  <div class="drawer-head">
+    <h2>单位 / 函数 / 常数手册</h2>
+    <button id="btn-close-units" class="btn btn-ghost" type="button">关闭</button>
+  </div>
+  <div id="units-content" class="units-content"></div>
+</aside>
+
+<!-- 浮动案例库按钮 -->
+<button id="btn-cases" class="fab" type="button" title="案例库">🗂</button>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

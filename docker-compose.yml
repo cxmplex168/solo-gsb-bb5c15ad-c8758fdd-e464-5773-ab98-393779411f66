@@ -1,0 +1,22 @@
+services:
+  dimlab:
+    build: .
+    image: dimlab:latest
+    container_name: dimlab
+    ports:
+      # 宿主机固定 8000 端口 -> 容器 8000
+      - "8000:8000"
+    environment:
+      DIMLAB_DB: /data/cases.db
+    volumes:
+      - dimlab-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/api/units"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 8s
+
+volumes:
+  dimlab-data:
