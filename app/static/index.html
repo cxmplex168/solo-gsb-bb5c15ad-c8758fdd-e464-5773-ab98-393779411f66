@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>科研配方量纲校验台</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>⚗️ 科研配方量纲校验台</h1>
+    <p>录入带单位的计算表达式与变量，递归推导量纲、自动换算单位，并精确定位表达式中的错误片段。</p>
+  </header>
+
+  <main>
+    <div class="col">
+      <section class="card">
+        <h2>计算表达式</h2>
+        <input id="expr" class="mono big" type="text" spellcheck="false"
+               placeholder="例如：0.5*mass*v^2 + mass*g0*h0   （支持 9.8 m/s²、2π r、× ÷ 等写法）">
+
+        <div class="row-between">
+          <h3>变量</h3>
+          <button id="addVar" class="btn small">＋ 添加变量</button>
+        </div>
+        <div id="vars"></div>
+
+        <label class="lbl" for="target">目标单位（可选，用于换算结果）</label>
+        <input id="target" class="mono" type="text" spellcheck="false" placeholder="例如：kJ、km/h、N·s">
+
+        <div class="actions">
+          <button id="check" class="btn primary">校验 <kbd>Ctrl+Enter</kbd></button>
+          <button id="sample" class="btn">载入示例</button>
+          <button id="exportResult" class="btn" disabled>导出结果 JSON</button>
+        </div>
+
+        <div class="row-between save-row">
+          <input id="caseName" type="text" placeholder="案例名称（保存用）">
+          <button id="saveCase" class="btn">💾 保存为案例</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>校验结果</h2>
+        <div id="result"><p class="muted">输入表达式后点击「校验」。</p></div>
+      </section>
+    </div>
+
+    <aside class="col">
+      <section class="card">
+        <div class="row-between">
+          <h2>已保存案例</h2>
+          <button id="exportAll" class="btn small">导出全部 JSON</button>
+        </div>
+        <ul id="caseList" class="case-list"></ul>
+      </section>
+
+      <section class="card">
+        <h2>单位 · 常量 · 函数</h2>
+        <div id="unitsHelp" class="units-help"><p class="muted">加载中…</p></div>
+      </section>
+    </aside>
+  </main>
+
+  <footer>
+    <span>API 文档：<a href="/docs">/docs</a>（Swagger UI）</span>
+    <span>量纲向量顺序：L 长度 · M 质量 · T 时间 · I 电流 · Θ 温度 · N 物质的量 · J 发光强度</span>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

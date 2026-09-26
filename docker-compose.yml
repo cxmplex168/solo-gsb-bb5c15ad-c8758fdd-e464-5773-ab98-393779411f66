@@ -1,0 +1,17 @@
+name: dimcheck
+
+services:
+  web:
+    build: .
+    image: dimcheck:latest
+    container_name: dimcheck-web
+    ports:
+      - "8000:8000"          # 固定端口：Web 界面与 API 均在 8000
+    environment:
+      DB_PATH: /app/data/app.db
+    volumes:
+      - dimcheck-data:/app/data   # SQLite 数据持久化
+    restart: unless-stopped
+
+volumes:
+  dimcheck-data:
